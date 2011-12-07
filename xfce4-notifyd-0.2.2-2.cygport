@@ -1,6 +1,9 @@
 inherit xfce4
 
 
+PATCH_URI="0.2.2-no-idle-shutdown.patch
+           0.2.2-upstream-misc.patch"
+
 DEPEND="xfce4-dev-tools
 	pkgconfig(dbus-glib-1)
 	pkgconfig(libxfconf-0)
@@ -12,8 +15,16 @@ src_install() {
 	# can provide org.freedesktop.Notifications (gnome-shell,
 	# GNOME notification-daemon, Ubuntu notify-osd) but only one can
 	# run at a given time.  The supported solution is for none of them
-	# to register for autostart, but leave the session manager to
+	# to register for DBus autostart, but leave the session manager to
 	# launch the service provider for the given desktop.
 	cyginstall service_DATA=
-	make_desktop_entry /usr/lib/xfce4/notifyd/xfce4-notifyd "Xfce Notification Daemon" xfce4-notifyd "" "" "OnlyShowIn=XFCE;"
+	dodir /etc/xdg/autostart
+	cat > ${D}/etc/xdg/autostart/${PN}.desktop <<_EOF
+[Desktop Entry]
+Type=Application
+Name=Xfce Notification Daemon
+Exec=/usr/lib/xfce4/notifyd/xfce4-notifyd
+Icon=xfce4-notifyd
+OnlyShowIn=XFCE;
+_EOF
 }

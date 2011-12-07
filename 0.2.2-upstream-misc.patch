@@ -1,0 +1,93 @@
+commit a911346130b5bd78c066eee1260c9373450480b2
+commit 627969763808d37b5455bbc7f3927d50fcae6987
+commit 836e6ce0673a71345c581170412f14a68f6163f7
+commit 8b34ed09d43bbf8daf4e1c71466212d614109ac0
+commit c032013769ee860309d3d8821bbea4ed284e45b0
+commit ad77e8aa48201c1c10226b54f7ab006989f2f4d5
+
+--- a/xfce4-notifyd/xfce-notify-daemon.c
++++ b/xfce4-notifyd/xfce-notify-daemon.c
+@@ -846,9 +846,7 @@ notify_get_capabilities(XfceNotifyDaemon *xndaemon,
+     (*OUT_capabilities)[i++] = g_strdup("actions");
+     (*OUT_capabilities)[i++] = g_strdup("body");
+     (*OUT_capabilities)[i++] = g_strdup("body-markup");
+-#ifdef HAVE_LIBSEXY
+     (*OUT_capabilities)[i++] = g_strdup("body-hyperlinks");
+-#endif
+     (*OUT_capabilities)[i++] = g_strdup("icon-static");
+     (*OUT_capabilities)[i++] = g_strdup("x-canonical-private-icon-only");
+     (*OUT_capabilities)[i++] = NULL;
+@@ -868,6 +866,13 @@ notify_get_capabilities(XfceNotifyDaemon *xndaemon,
+ }
+ 
+ static gboolean
++notify_show_window(gpointer window)
++{
++  gtk_widget_show(GTK_WIDGET(window));
++  return FALSE;
++}
++
++static gboolean
+ notify_notify(XfceNotifyDaemon *xndaemon,
+               const gchar *app_name,
+               guint replaces_id,
+@@ -931,7 +936,8 @@ notify_notify(XfceNotifyDaemon *xndaemon,
+                          G_CALLBACK(xfce_notify_daemon_window_size_allocate),
+                          xndaemon);
+ 
+-        gtk_widget_show(GTK_WIDGET(window));
++        gtk_widget_realize(GTK_WIDGET(window));
++        g_idle_add(notify_show_window, window);
+     }
+ 
+     if(!app_icon || !*app_icon) {
+--- a/xfce4-notifyd/xfce-notify-window.c
++++ b/xfce4-notifyd/xfce-notify-window.c
+@@ -196,7 +196,6 @@ xfce_notify_window_init(XfceNotifyWindow *window)
+     GtkWidget *tophbox, *align, *vbox;
+     gdouble border_radius = DEFAULT_RADIUS;
+ 
+-    GTK_WINDOW(window)->type = GTK_WINDOW_TOPLEVEL;
+     window->expire_timeout = DEFAULT_EXPIRE_TIMEOUT;
+     window->normal_opacity = DEFAULT_NORMAL_OPACITY;
+     /* The summary widget needs to be initialized before style_set is called. gtk_widget_ensure_style calls style_set */
+@@ -719,7 +718,7 @@ xfce_notify_window_button_clicked(GtkWidget *widget,
+ 
+     g_signal_emit(G_OBJECT(window), signals[SIG_ACTION_INVOKED], 0,
+                   action_id);
+-    g_signal_emit(G_OBJECT(widget), signals[SIG_CLOSED], 0,
++    g_signal_emit(G_OBJECT(window), signals[SIG_CLOSED], 0,
+                   XFCE_NOTIFY_CLOSE_REASON_DISMISSED);
+ }
+ 
+@@ -935,7 +934,8 @@ xfce_notify_window_new_with_actions(const gchar *summary,
+ {
+     XfceNotifyWindow *window;
+ 
+-    window = g_object_new(XFCE_TYPE_NOTIFY_WINDOW, NULL);
++    window = g_object_new(XFCE_TYPE_NOTIFY_WINDOW,
++                          "type", GTK_WINDOW_TOPLEVEL, NULL);
+ 
+     xfce_notify_window_set_summary(window, summary);
+     xfce_notify_window_set_body(window, body);
+@@ -1041,6 +1041,7 @@ xfce_notify_window_set_icon_name(XfceNotifyWindow *window,
+                                  const gchar *icon_name)
+ {
+     gboolean icon_set = FALSE;
++    gchar *filename;
+ 
+     g_return_if_fail(XFCE_IS_NOTIFY_WINDOW(window));
+ 
+@@ -1052,6 +1053,12 @@ xfce_notify_window_set_icon_name(XfceNotifyWindow *window,
+ 
+         if(g_path_is_absolute(icon_name))
+           pix = gdk_pixbuf_new_from_file_at_size(icon_name, w, h, NULL);
++        else if(g_str_has_prefix (icon_name, "file://")) {
++            filename = g_filename_from_uri(icon_name, NULL, NULL);
++            if(filename)
++              pix = gdk_pixbuf_new_from_file_at_size(filename, w, h, NULL);
++            g_free(filename);
++          }
+         else
+           pix = gtk_icon_theme_load_icon(gtk_icon_theme_get_default(),
+                                        icon_name,

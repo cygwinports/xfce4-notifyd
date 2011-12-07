@@ -1,0 +1,86 @@
+We do not install the DBus service file because multiple programs can 
+provide org.freedesktop.Notifications (gnome-shell, GNOME 
+notification-daemon, Ubuntu notify-osd) but only one can run at a given 
+time.  The supported solution is for none of them to register for DBus 
+autostart, but leave the session manager to launch the service provider 
+for the given desktop.
+
+This means that we cannot shutdown upon idle, since there is nothing
+which will restart it when needed.
+
+--- origsrc/xfce4-notifyd-0.2.2/xfce4-notifyd/xfce-notify-daemon.c	2011-07-02 03:09:20.000000000 -0500
++++ src/xfce4-notifyd-0.2.2/xfce4-notifyd/xfce-notify-daemon.c	2011-12-06 21:21:58.399752900 -0600
+@@ -323,9 +323,11 @@ xfce_notify_daemon_init(XfceNotifyDaemon
+     xndaemon->reserved_rectangles = NULL;
+     xndaemon->monitors_workarea = NULL;
+ 
++#if 0
+     xndaemon->close_timeout =
+         g_timeout_add_seconds(600, (GSourceFunc) xfce_notify_daemon_close_timeout,
+                               xndaemon);
++#endif
+ }
+ 
+ static void
+@@ -410,6 +412,7 @@ xfce_notify_daemon_window_closed(XfceNot
+ 
+     g_tree_remove(xndaemon->active_notifications, id_p);
+ 
++#if 0
+     if (g_tree_nnodes(xndaemon->active_notifications) == 0) {
+         /* All notifications expired */
+         /* Set a timeout to close xfce4-notifyd if it is idle
+@@ -423,6 +426,7 @@ xfce_notify_daemon_window_closed(XfceNot
+                                   (GSourceFunc) xfce_notify_daemon_close_timeout,
+                                   xndaemon);
+     }
++#endif
+ 
+ #ifdef USE_OLD_NOTIFICATION_CLOSED_SIGNATURE
+     g_signal_emit(G_OBJECT(xndaemon), signals[SIG_NOTIFICATION_CLOSED], 0,
+@@ -853,6 +857,7 @@ notify_get_capabilities(XfceNotifyDaemon
+     (*OUT_capabilities)[i++] = g_strdup("x-canonical-private-icon-only");
+     (*OUT_capabilities)[i++] = NULL;
+ 
++#if 0
+     if (g_tree_nnodes(xndaemon->active_notifications) == 0) {
+         /* No active notifications, reset the close timeout */
+         if(xndaemon->close_timeout)
+@@ -863,6 +868,7 @@ notify_get_capabilities(XfceNotifyDaemon
+                                   (GSourceFunc) xfce_notify_daemon_close_timeout,
+                                   xndaemon);
+     }
++#endif
+ 
+     return TRUE;
+ }
+@@ -991,11 +997,13 @@ notify_notify(XfceNotifyDaemon *xndaemon
+ 
+     gtk_widget_realize(GTK_WIDGET(window));
+ 
++#if 0
+     /* Remove close timeout as we display a new notification */
+     if(xndaemon->close_timeout)
+         g_source_remove(xndaemon->close_timeout);
+ 
+     xndaemon->close_timeout = 0;
++#endif
+ 
+     return TRUE;
+ }
+@@ -1031,6 +1039,7 @@ notify_get_server_information(XfceNotify
+     *OUT_spec_version = g_strdup(NOTIFICATIONS_SPEC_VERSION);
+ #endif
+ 
++#if 0
+     if (g_tree_nnodes(xndaemon->active_notifications) == 0) {
+         /* No active notifications, reset the close timeout */
+         if(xndaemon->close_timeout)
+@@ -1041,6 +1050,7 @@ notify_get_server_information(XfceNotify
+                                   (GSourceFunc) xfce_notify_daemon_close_timeout,
+                                   xndaemon);
+     }
++#endif
+ 
+     return TRUE;
+ }
