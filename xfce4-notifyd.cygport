@@ -1,8 +1,17 @@
 inherit xfce4
 
+NAME="xfce4-notifyd"
+VERSION=0.2.4
+RELEASE=1
+CATEGORY="Xfce"
+SUMMARY="Xfce notification daemon"
+DESCRIPTION="The Xfce Notify Daemon is a smallish program that implements the
+server-side portion of the Freedesktop desktop notifications specification.
+Applications that wish to pop up a notification bubble in a standard way can
+implicitly make use of xfce4-notifyd to do so by sending standard messages
+over D-Bus using the org.freedesktop.Notifications interface."
 
-PATCH_URI="0.2.2-no-idle-shutdown.patch
-           0.2.2-upstream-misc.patch"
+PATCH_URI="0.2.2-no-idle-shutdown.patch"
 
 DEPEND="xfce4-dev-tools
 	pkgconfig(dbus-glib-1)
