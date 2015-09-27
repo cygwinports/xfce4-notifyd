@@ -2,7 +2,7 @@ inherit xfce4
 
 NAME="xfce4-notifyd"
 VERSION=0.2.4
-RELEASE=1
+RELEASE=2
 CATEGORY="Xfce"
 SUMMARY="Xfce notification daemon"
 DESCRIPTION="The Xfce Notify Daemon is a smallish program that implements the
